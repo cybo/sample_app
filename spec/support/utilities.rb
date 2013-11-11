@@ -7,12 +7,19 @@ def full_title(page_title = "")
   end
 end
 
-def signin(user = nil)
-  unless user.nil?
-    fill_in "Email",    with: user.email
-    fill_in "Password", with: user.password
+def signin(user = nil, options={})
+  if options[:no_capybara]
+    # sign in when not using Capybara
+    remember_token = User.new_remember_token
+    cookies[:remember_token] = remember_token
+    user.update_attribute(:remember_token, User.encrypt(remember_token))
+  else
+    unless user.nil?
+      fill_in "Email",    with: user.email
+      fill_in "Password", with: user.password
+    end
+    click_button "Sign in"
   end
-  click_button "Sign in"
 end
 
 RSpec::Matchers.define :have_error_message do |message|

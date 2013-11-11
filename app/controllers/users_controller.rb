@@ -1,5 +1,7 @@
 class UsersController < ApplicationController
-  
+  before_action :signed_in_user, only: [:index, :edit, :update]
+  before_action :correct_user,   only: [:edit, :update]
+  before_action :admin_user,     only: [:destroy]
   def show
     @user = User.find(params[:id])
   end
@@ -14,10 +16,40 @@ class UsersController < ApplicationController
       flash[:success] = "Welcome to the Sample App!" 
       # sign in user and redirect to user's show page
       sign_in @user
-      redirect_to @user
+      redirect_to @user # same as show_user_path?
     else
       render 'new'
     end
+  end
+
+  # rails uses patch request because Active Record checks @user
+  # if @user.new_record? is true it uses POST, if false, PATCH
+  def update
+    # @user = User.find(params[:id])  # not needed...
+    if @user.update_attributes(user_params)
+      # handle successful update
+      flash[:success] = "Profile updated"
+      redirect_to @user
+    else
+      render 'edit'
+    end
+  end
+
+  def edit
+    # @user = User.find(params[:id]) 
+    # not needed since before_action :correct_user defined
+  end
+
+  # users_path => GET
+  def index
+    @users = User.paginate(page: params[:page])
+  end
+
+  def destroy
+
+    User.find(params[:id]).destroy
+    flash[:success] = "User deleted."
+    redirect_to users_url
   end
 
   private
@@ -27,5 +59,30 @@ class UsersController < ApplicationController
                                    :password_confirmation)
     end
 
+    # Before filters
+
+    def signed_in_user
+      unless signed_in?
+        store_location
+        redirect_to signin_url, notice: "Please sign in."
+      end
+    end
+    # the more verbose below is equivalent
+    # note: shorthand only works for notice, not for error/success
+    # def signed_in_user
+    #   unless signed_in?
+    #     flash[:notice] = "Please sign in."
+    #     redirect_to signin_url
+    #   end
+    # end
+
+    def correct_user
+      @user = User.find(params[:id])
+      redirect_to(root_url) unless current_user?(@user)
+    end
+
+    def admin_user
+      redirect_to(root_url) unless current_user.admin?
+    end
 
 end
