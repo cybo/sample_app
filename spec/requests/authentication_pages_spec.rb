@@ -24,10 +24,12 @@ describe "Authentication Pages" do
         before { click_link "Home" }
         it { should_not have_error_message }
       end
-   end
+    end
 
     describe "with valid information" do
       let(:user) { FactoryGirl.create(:user) }
+
+      before { visit signin_path }
       before { signin user }
 
       it { should have_title(user.name) }
@@ -40,9 +42,18 @@ describe "Authentication Pages" do
       describe "followed by signout" do
         before { click_link "Sign out" }
         it { should have_link('Sign in') } 
+
+        before { visit user_path(user) }
+        it { should have_title(user.name) }
+        it { should_not have_link('Users',    href: users_path) }
+        it { should_not have_link('Profile',  href: user_path(user)) }
+        it { should_not have_link('Settings', href: edit_user_path(user)) }
+        it { should_not have_link('Sign out', href: signout_path) }
+        it { should have_link('Sign in',      href: signin_path) }
       end
     end
-   end
+
+  end
 
   describe "authorization" do
 
@@ -115,6 +126,26 @@ describe "Authentication Pages" do
         specify { expect(response).to redirect_to(root_url) }
       end
     end
-    
+
+    describe "as signed-in user" do
+      let(:user) { FactoryGirl.create(:user) }
+
+      before do
+        visit signin_path
+        signin user, no_capybara: true
+      end
+
+      describe "submitting a GET request to the Users#new action" do
+        before { get new_user_path }
+        specify { expect(response).to redirect_to(root_url) }
+      end
+
+      describe "submitting a POST request to the Users#create action" do
+        let(:dummy_user) { FactoryGirl.build(:user) }
+
+        before { post users_path, user: dummy_user.attributes }
+        specify { expect(response).to redirect_to(root_url) }
+      end
+    end
   end
 end
