@@ -24,6 +24,21 @@ module SessionsHelper
     user == current_user
   end
 
+  def signed_in_user
+    unless signed_in?
+      store_location
+      redirect_to signin_url, notice: "Please sign in."
+    end
+  end
+  # the more verbose below is equivalent
+  # note: shorthand only works for notice, not for error/success
+  # def signed_in_user
+  #   unless signed_in?
+  #     flash[:notice] = "Please sign in."
+  #     redirect_to signin_url
+  #   end
+  # end
+
   def sign_out
     self.current_user = nil
     cookies.delete(:remember_token)
